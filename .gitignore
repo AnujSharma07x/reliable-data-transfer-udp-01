@@ -8,3 +8,4 @@ __pycache__/
 test_channel
 experiments/data/
 experiments/results/logs/
+*.pid

@@ -60,6 +60,8 @@ int net_send_pkt(conn_t *c, const packet_t *p)
 {
     uint8_t buf[PKT_MAX_SIZE];
     int n = packet_encode(p, buf);
+    if (n < 0)
+        return -1;
     return channel_send(c->sock, buf, n,
                         (struct sockaddr *)&c->peer, sizeof(c->peer));
 }
