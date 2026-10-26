@@ -1,0 +1,413 @@
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/server.o src/server.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/packet.o src/packet.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/net.o src/net.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/channel.o src/channel.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/rto.o src/rto.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/arq.o src/arq.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/options.o src/options.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/saw.o src/saw.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/gbn.o src/gbn.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/sr.o src/sr.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/hash.o src/hash.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -o server src/server.o src/packet.o src/net.o src/channel.o src/rto.o src/arq.o src/options.o src/saw.o src/gbn.o src/sr.o src/hash.o -lm -pthread -lcrypto
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o src/client.o src/client.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -o client src/client.o src/packet.o src/net.o src/channel.o src/rto.o src/arq.o src/options.o src/saw.o src/gbn.o src/sr.o src/hash.o -lm -pthread -lcrypto
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o tests/test_units.o tests/test_units.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -o test_units tests/test_units.o src/packet.o src/rto.o src/hash.o -lm -pthread -lcrypto
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -c -o tests/test_channel.o tests/test_channel.c
+gcc -std=gnu11 -Wall -Wextra -O2 -Isrc -pthread -o test_channel tests/test_channel.o src/channel.o src/packet.o -lm -pthread -lcrypto
+./test_units
+[packet]
+  PASS  encoded size = header + payload
+  PASS  valid packet decodes
+  PASS  fields survive round trip
+  PASS  1-bit payload error detected
+  PASS  corrupted seq number detected
+  PASS  truncated packet rejected
+  PASS  empty ACK packet round trip
+  PASS  unknown packet type rejected
+  PASS  ACK with payload rejected by encoder
+  PASS  oversized payload rejected by encoder
+  PASS  nonzero reserved byte rejected
+[rto]
+  PASS  initial RTO before any sample
+  PASS  first sample: SRTT=RTT, RTTVAR=RTT/2, RTO=300
+  PASS  second sample follows Jacobson/Karels
+  PASS  stable RTT -> RTO converges to RTT + G (RFC 6298 margin)
+  PASS  timeout doubles RTO (backoff)
+  PASS  backoff is capped at RTO_MAX
+  PASS  two timeouts -> 4x RTO
+  PASS  ACK of new data clears backoff (no Karn sample needed)
+  PASS  tiny RTT clamps to RTO_MIN
+  PASS  fixed RTO ignores samples and timeouts
+[hash]
+  PASS  SHA-256(empty file) = NIST vector
+  PASS  SHA-256("abc") = NIST vector
+  PASS  SHA-256(448-bit message) = NIST vector
+  PASS  SHA-256(one million 'a') = NIST vector (multi-chunk read)
+  PASS  missing file returns -1
+
+all unit tests passed
+./test_channel
+CHANNEL sent=4097 dropped=0 corrupted=0 duplicated=0 reordered=0 queue_full=1 send_errors=0 init_errors=0
+[1] no impairment baseline
+  PASS  all 1000 arrive once, checksum ok (got 1000)
+  PASS  in order, payload intact (inversions 0)
+[2] loss = 0% (through the delay queue, 5 ms)
+  PASS  all 1000 arrive, 0 dropped (got 1000)
+[3] loss = 100%
+  PASS  nothing arrives, dropped=1000
+[3b] loss = 10%
+  PASS  received 875 = 1000 - dropped 125 (expect ~100)
+[4] duplication 20%
+  PASS  received 1205 = 1000 + duplicated 205 (expect ~200)
+  PASS  real duplicates: max 2 copies, none missing, payload intact
+[5] reordering 20% (delay 5 ms, packets 1 ms apart)
+  PASS  out-of-order arrivals: 194 inversions, all 1000 arrive once
+  PASS  reordered=194 (expect ~200)
+  PASS  control: fixed delay, no reorder -> FIFO kept (0 inversions)
+[6] corruption 10%
+  PASS  checksum failures 113 == corrupted 113 (expect ~100)
+  PASS  every packet passing the checksum has an intact payload
+  PASS  corruption only touches a copy, never the caller's buffer
+[7] fixed delay 30 ms (200 packets sent back-to-back)
+  PASS  all packets arrive no earlier than fixed delay (latency 30.2 .. 30.3 ms)
+  PASS  non-blocking: 200 sends took 0.4 ms (not 200 x 30 ms)
+[8] delay 30 ms + jitter 10 ms (packets 5 ms apart)
+  PASS  all packets arrive no earlier than minimum delay (latency 22.9 .. 41.2 ms)
+  PASS  jitter varies arrival times: mean 34.3 ms, std dev 4.8 ms
+  PASS  jitter alone never reorders: FIFO kept (0 inversions)
+  PASS  FIFO kept even for a back-to-back burst (0 inversions)
+[9] deterministic seed
+  PASS  seed 7 twice -> identical decisions + per-packet fate (300 arrivals; dropped 29 dup 29 corrupt 28 reorder 30)
+  PASS  same seed preserves packet fate; observed 2 arrival-order differences
+  PASS  seed 8 -> different decisions (dropped 27 dup 32 corrupt 19 reorder 34)
+[10] combined: loss 5% dup 5% reorder 10% corrupt 5% delay 20 jitter 5
+  PASS  arrivals 1002 = 1000 - dropped 44 + duplicated 46
+  PASS  checksum failures 41 (corrupted 39), 87 inversions, intact payloads
+[11] immediate UDP send error reporting
+  PASS  invalid socket returns error (rc=-1 send_errors=1)
+[12] asynchronous UDP send-error counting
+  PASS  queued packet accepted before asynchronous delivery
+  PASS  delivery thread counts failed sendto (send_errors=2)
+[13] queue-capacity error reporting
+  PASS  queue capacity returns error (rc=-1 queue_full=1)
+
+all channel tests passed
+bash ./tests/run_tests.sh
+== Stop-and-Wait end-to-end tests ==
+PASS  1 normal transfer (1 MB)               protocol=saw window=1 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=21.7 goodput_kbps=386485.7 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=saw file_bytes=1048576 duplicates=0 corrupted=0 time_ms=21.7 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  2 lost DATA (drop every 10th)          protocol=saw window=1 rto=adaptive file_bytes=1048576 packets_sent=1138 retransmissions=113 timeouts=113 corrupted=0 time_ms=2083.6 goodput_kbps=4026.0 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=saw file_bytes=1048576 duplicates=0 corrupted=0 time_ms=2083.6 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  3 corrupted DATA (every 7th)           protocol=saw window=1 rto=adaptive file_bytes=1048576 packets_sent=1195 retransmissions=170 timeouts=170 corrupted=0 time_ms=3097.6 goodput_kbps=2708.1 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=saw file_bytes=1048576 duplicates=0 corrupted=170 time_ms=3098.3 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  4 lost ACK (drop every 8th)            protocol=saw window=1 rto=adaptive file_bytes=1048576 packets_sent=1171 retransmissions=146 timeouts=146 corrupted=0 time_ms=2687.0 goodput_kbps=3121.9 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=saw file_bytes=1048576 duplicates=146 corrupted=0 time_ms=2687.0 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  5 corrupted ACK (every 9th)            protocol=saw window=1 rto=adaptive file_bytes=1048576 packets_sent=1153 retransmissions=128 timeouts=128 corrupted=128 time_ms=2362.0 goodput_kbps=3551.6 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=saw file_bytes=1048576 duplicates=128 corrupted=0 time_ms=2361.9 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  6 delayed ACK 20ms, adaptive RTO       protocol=saw window=1 rto=adaptive file_bytes=20000 packets_sent=21 retransmissions=0 timeouts=0 corrupted=0 time_ms=425.1 goodput_kbps=376.4 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=saw file_bytes=20000 duplicates=0 corrupted=0 time_ms=404.9 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  7 delayed ACK 25ms, fixed RTO 100      protocol=saw window=1 rto=100 file_bytes=20000 packets_sent=21 retransmissions=0 timeouts=0 corrupted=0 time_ms=528.9 goodput_kbps=302.5 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=saw file_bytes=20000 duplicates=0 corrupted=0 time_ms=503.7 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  8 combined loss+corruption             protocol=saw window=1 rto=adaptive file_bytes=1048576 packets_sent=1296 retransmissions=271 timeouts=271 corrupted=0 time_ms=5953.1 goodput_kbps=1409.1 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=saw file_bytes=1048576 duplicates=64 corrupted=90 time_ms=5953.6 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+
+== Go-Back-N end-to-end tests ==
+PASS  W1 normal, window 1                    protocol=gbn window=1 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=19.8 goodput_kbps=423550.3 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=0 time_ms=19.7 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  W4 normal, window 4                    protocol=gbn window=4 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=7.3 goodput_kbps=1141902.6 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=0 time_ms=7.3 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  W8 normal, window 8                    protocol=gbn window=8 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=3.1 goodput_kbps=2705912.7 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=0 time_ms=3.0 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  W16 normal, window 16                  protocol=gbn window=16 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=4.8 goodput_kbps=1741806.1 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=0 time_ms=4.7 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  W32 normal, window 32                  protocol=gbn window=32 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=5.1 goodput_kbps=1657555.4 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=0 time_ms=5.0 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  G6 lost DATA, window 8                 protocol=gbn window=8 rto=adaptive file_bytes=1048576 packets_sent=5073 retransmissions=4048 timeouts=507 corrupted=0 time_ms=9238.1 goodput_kbps=908.0 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=0 time_ms=9238.7 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  G7 lost DATA, window 32                protocol=gbn window=32 rto=adaptive file_bytes=1048576 packets_sent=5067 retransmissions=4042 timeouts=129 corrupted=0 time_ms=2367.3 goodput_kbps=3543.5 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=0 time_ms=2367.3 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  G8 corrupted DATA, window 8            protocol=gbn window=8 rto=adaptive file_bytes=1048576 packets_sent=2385 retransmissions=1360 timeouts=171 corrupted=0 time_ms=3118.7 goodput_kbps=2689.8 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=340 time_ms=3119.2 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  G9 lost ACK, window 8                  protocol=gbn window=8 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=3.1 goodput_kbps=2712712.6 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=0 time_ms=3.0 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  G10 corrupted ACK, window 8            protocol=gbn window=8 rto=adaptive file_bytes=1048576 packets_sent=1026 retransmissions=1 timeouts=1 corrupted=114 time_ms=21.6 goodput_kbps=387969.7 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=0 time_ms=3.3 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  G11 delayed ACK 20ms, window 8         protocol=gbn window=8 rto=adaptive file_bytes=20000 packets_sent=21 retransmissions=0 timeouts=0 corrupted=0 time_ms=61.1 goodput_kbps=2619.3 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=gbn file_bytes=20000 duplicates=0 corrupted=0 time_ms=40.8 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  G12 combined, window 16                protocol=gbn window=16 rto=adaptive file_bytes=1048576 packets_sent=4629 retransmissions=3604 timeouts=227 corrupted=0 time_ms=4762.4 goodput_kbps=1761.4 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=324 time_ms=4763.1 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+
+== Exact-behaviour tests (review T1-T8) ==
+PASS  T1a single loss, gbn w1 -> retx 1      protocol=gbn window=1 rto=adaptive file_bytes=20000 packets_sent=22 retransmissions=1 timeouts=1 corrupted=0 time_ms=18.8 goodput_kbps=8495.1 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=gbn file_bytes=20000 duplicates=0 corrupted=0 time_ms=18.8 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  T1b single loss, gbn w4 -> retx 4      protocol=gbn window=4 rto=adaptive file_bytes=20000 packets_sent=25 retransmissions=4 timeouts=1 corrupted=0 time_ms=18.4 goodput_kbps=8705.3 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=gbn file_bytes=20000 duplicates=0 corrupted=0 time_ms=18.9 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  T1c single loss, gbn w8 -> retx 7      protocol=gbn window=8 rto=adaptive file_bytes=20000 packets_sent=28 retransmissions=7 timeouts=1 corrupted=0 time_ms=18.4 goodput_kbps=8718.2 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=gbn file_bytes=20000 duplicates=0 corrupted=0 time_ms=18.3 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  T1d single loss, saw -> retx 1         protocol=saw window=1 rto=adaptive file_bytes=20000 packets_sent=22 retransmissions=1 timeouts=1 corrupted=0 time_ms=18.8 goodput_kbps=8514.2 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=saw file_bytes=20000 duplicates=0 corrupted=0 time_ms=18.7 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  T2a EOF lost, gbn w8                   protocol=gbn window=8 rto=adaptive file_bytes=3000 packets_sent=5 retransmissions=1 timeouts=1 corrupted=0 time_ms=18.3 goodput_kbps=1311.0 source_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+      RECV protocol=gbn file_bytes=3000 duplicates=0 corrupted=0 time_ms=18.2 received_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+PASS  T2b EOF lost, saw                      protocol=saw window=1 rto=adaptive file_bytes=3000 packets_sent=5 retransmissions=1 timeouts=1 corrupted=0 time_ms=18.3 goodput_kbps=1308.0 source_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+      RECV protocol=saw file_bytes=3000 duplicates=0 corrupted=0 time_ms=18.3 received_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+PASS  T3a final ACK lost, gbn, rto 1500      protocol=gbn window=8 rto=1500 file_bytes=3000 packets_sent=5 retransmissions=1 timeouts=1 corrupted=0 time_ms=1499.7 goodput_kbps=16.0 source_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+      RECV protocol=gbn file_bytes=3000 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+PASS  T3b final ACK lost, saw, rto 1500      protocol=saw window=1 rto=1500 file_bytes=3000 packets_sent=5 retransmissions=1 timeouts=1 corrupted=0 time_ms=1499.9 goodput_kbps=16.0 source_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+      RECV protocol=saw file_bytes=3000 duplicates=0 corrupted=0 time_ms=0.1 received_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+PASS  T3c final ACK lost, gbn, adaptive      protocol=gbn window=8 rto=adaptive file_bytes=3000 packets_sent=5 retransmissions=1 timeouts=1 corrupted=0 time_ms=18.2 goodput_kbps=1316.2 source_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+      RECV protocol=gbn file_bytes=3000 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+PASS  T4a no spurious retx, saw 20ms         protocol=saw window=1 rto=adaptive file_bytes=20000 packets_sent=21 retransmissions=0 timeouts=0 corrupted=0 time_ms=423.8 goodput_kbps=377.5 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=saw file_bytes=20000 duplicates=0 corrupted=0 time_ms=403.6 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  T4b no spurious retx, saw 30ms         protocol=saw window=1 rto=adaptive file_bytes=20000 packets_sent=21 retransmissions=0 timeouts=0 corrupted=0 time_ms=634.3 goodput_kbps=252.2 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=saw file_bytes=20000 duplicates=0 corrupted=0 time_ms=604.1 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  T5 size 0 B, saw -> 1 pkts             protocol=saw window=1 rto=adaptive file_bytes=0 packets_sent=1 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=0.0 source_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      RECV protocol=saw file_bytes=0 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+PASS  T5 size 0 B, gbn w4 -> 1 pkts          protocol=gbn window=4 rto=adaptive file_bytes=0 packets_sent=1 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=0.0 source_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      RECV protocol=gbn file_bytes=0 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+PASS  T5 size 1 B, saw -> 2 pkts             protocol=saw window=1 rto=adaptive file_bytes=1 packets_sent=2 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=66.6 source_sha256=1f184f101c67d585ba00d24cfde36863f747fbab9e84af7760ec771e9b36ca51
+      RECV protocol=saw file_bytes=1 duplicates=0 corrupted=0 time_ms=0.1 received_sha256=1f184f101c67d585ba00d24cfde36863f747fbab9e84af7760ec771e9b36ca51
+PASS  T5 size 1 B, gbn w4 -> 2 pkts          protocol=gbn window=4 rto=adaptive file_bytes=1 packets_sent=2 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=85.9 source_sha256=1f184f101c67d585ba00d24cfde36863f747fbab9e84af7760ec771e9b36ca51
+      RECV protocol=gbn file_bytes=1 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=1f184f101c67d585ba00d24cfde36863f747fbab9e84af7760ec771e9b36ca51
+PASS  T5 size 1024 B, saw -> 2 pkts          protocol=saw window=1 rto=adaptive file_bytes=1024 packets_sent=2 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=55796.2 source_sha256=48a9840f84f1d48e94fef349d7eca8eb2fc9ee740cbb280455a61b6d766f526c
+      RECV protocol=saw file_bytes=1024 duplicates=0 corrupted=0 time_ms=0.1 received_sha256=48a9840f84f1d48e94fef349d7eca8eb2fc9ee740cbb280455a61b6d766f526c
+PASS  T5 size 1024 B, gbn w4 -> 2 pkts       protocol=gbn window=4 rto=adaptive file_bytes=1024 packets_sent=2 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=93749.3 source_sha256=48a9840f84f1d48e94fef349d7eca8eb2fc9ee740cbb280455a61b6d766f526c
+      RECV protocol=gbn file_bytes=1024 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=48a9840f84f1d48e94fef349d7eca8eb2fc9ee740cbb280455a61b6d766f526c
+PASS  T5 size 2048 B, saw -> 3 pkts          protocol=saw window=1 rto=adaptive file_bytes=2048 packets_sent=3 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=253712.6 source_sha256=b4ddfe6acfdfaad8d71a6b45643417594a4be6b13ed6cad4750e4da83c702ded
+      RECV protocol=saw file_bytes=2048 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=b4ddfe6acfdfaad8d71a6b45643417594a4be6b13ed6cad4750e4da83c702ded
+PASS  T5 size 2048 B, gbn w4 -> 3 pkts       protocol=gbn window=4 rto=adaptive file_bytes=2048 packets_sent=3 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=289597.9 source_sha256=b4ddfe6acfdfaad8d71a6b45643417594a4be6b13ed6cad4750e4da83c702ded
+      RECV protocol=gbn file_bytes=2048 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=b4ddfe6acfdfaad8d71a6b45643417594a4be6b13ed6cad4750e4da83c702ded
+PASS  T6a window 2                           protocol=gbn window=2 rto=adaptive file_bytes=20000 packets_sent=21 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.4 goodput_kbps=403411.9 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=gbn file_bytes=20000 duplicates=0 corrupted=0 time_ms=0.3 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  T6b window 32 > 4 packets              protocol=gbn window=32 rto=adaptive file_bytes=3000 packets_sent=4 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=370330.4 source_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+      RECV protocol=gbn file_bytes=3000 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+PASS  T8 lost ACK costs GBN nothing          protocol=gbn window=8 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=3.8 goodput_kbps=2208917.1 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=gbn file_bytes=1048576 duplicates=0 corrupted=0 time_ms=3.7 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+
+== Selective Repeat end-to-end tests ==
+PASS  SW1 normal, window 1                   protocol=sr window=1 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=18.9 goodput_kbps=444995.8 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=0 corrupted=0 time_ms=18.8 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SW2 normal, window 2                   protocol=sr window=2 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=9.9 goodput_kbps=847235.6 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=0 corrupted=0 time_ms=9.8 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SW4 normal, window 4                   protocol=sr window=4 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=3.3 goodput_kbps=2559086.3 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=0 corrupted=0 time_ms=3.2 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SW8 normal, window 8                   protocol=sr window=8 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=6.9 goodput_kbps=1208329.0 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=0 corrupted=0 time_ms=7.4 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SW16 normal, window 16                 protocol=sr window=16 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=2.9 goodput_kbps=2883411.4 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=0 corrupted=0 time_ms=2.9 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SW32 normal, window 32                 protocol=sr window=32 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=3.1 goodput_kbps=2720113.8 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=0 corrupted=0 time_ms=3.0 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SR1 lost DATA, window 8                protocol=sr window=8 rto=adaptive file_bytes=1048576 packets_sent=1138 retransmissions=113 timeouts=113 corrupted=0 time_ms=2178.4 goodput_kbps=3850.9 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=0 corrupted=0 time_ms=2178.3 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SR2 lost DATA, window 32               protocol=sr window=32 rto=adaptive file_bytes=1048576 packets_sent=1138 retransmissions=113 timeouts=113 corrupted=0 time_ms=747.7 goodput_kbps=11219.7 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=0 corrupted=0 time_ms=747.6 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SR3 corrupted DATA, window 8           protocol=sr window=8 rto=adaptive file_bytes=1048576 packets_sent=1195 retransmissions=170 timeouts=170 corrupted=0 time_ms=1825.9 goodput_kbps=4594.2 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=0 corrupted=170 time_ms=1826.6 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SR4 lost ACK, window 8                 protocol=sr window=8 rto=adaptive file_bytes=1048576 packets_sent=1171 retransmissions=146 timeouts=146 corrupted=0 time_ms=4459.8 goodput_kbps=1880.9 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=146 corrupted=0 time_ms=4459.7 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SR5 corrupted ACK, window 8            protocol=sr window=8 rto=adaptive file_bytes=1048576 packets_sent=1153 retransmissions=128 timeouts=128 corrupted=128 time_ms=2648.6 goodput_kbps=3167.2 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=127 corrupted=0 time_ms=2629.4 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SR6a delayed ACK 20ms, window 2        protocol=sr window=2 rto=adaptive file_bytes=20000 packets_sent=21 retransmissions=0 timeouts=0 corrupted=0 time_ms=222.3 goodput_kbps=719.7 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=sr file_bytes=20000 duplicates=0 corrupted=0 time_ms=202.1 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  SR6b delayed ACK 20ms, window 8        protocol=sr window=8 rto=adaptive file_bytes=20000 packets_sent=21 retransmissions=0 timeouts=0 corrupted=0 time_ms=60.8 goodput_kbps=2633.2 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=sr file_bytes=20000 duplicates=0 corrupted=0 time_ms=40.6 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  SR7 combined, window 16                protocol=sr window=16 rto=adaptive file_bytes=1048576 packets_sent=1296 retransmissions=271 timeouts=271 corrupted=0 time_ms=2856.8 goodput_kbps=2936.3 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=63 corrupted=90 time_ms=2856.8 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+PASS  SR8a single loss, sr w1 -> retx 1      protocol=sr window=1 rto=adaptive file_bytes=20000 packets_sent=22 retransmissions=1 timeouts=1 corrupted=0 time_ms=19.5 goodput_kbps=8197.4 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=sr file_bytes=20000 duplicates=0 corrupted=0 time_ms=19.5 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  SR8b single loss, sr w4 -> retx 1      protocol=sr window=4 rto=adaptive file_bytes=20000 packets_sent=22 retransmissions=1 timeouts=1 corrupted=0 time_ms=19.3 goodput_kbps=8288.6 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=sr file_bytes=20000 duplicates=0 corrupted=0 time_ms=19.8 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  SR8c single loss, sr w8 -> retx 1      protocol=sr window=8 rto=adaptive file_bytes=20000 packets_sent=22 retransmissions=1 timeouts=1 corrupted=0 time_ms=19.3 goodput_kbps=8281.2 source_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+      RECV protocol=sr file_bytes=20000 duplicates=0 corrupted=0 time_ms=19.3 received_sha256=eb36ed21eb9a51efe21b502e162e9312ea346cf044933df93523684602f3c0d6
+PASS  SR9 EOF lost, sr w8                    protocol=sr window=8 rto=adaptive file_bytes=3000 packets_sent=5 retransmissions=1 timeouts=1 corrupted=0 time_ms=199.4 goodput_kbps=120.3 source_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+      RECV protocol=sr file_bytes=3000 duplicates=0 corrupted=0 time_ms=199.3 received_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+PASS  SR10a final ACK lost, rto 1500         protocol=sr window=8 rto=1500 file_bytes=3000 packets_sent=5 retransmissions=1 timeouts=1 corrupted=0 time_ms=1500.7 goodput_kbps=16.0 source_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+      RECV protocol=sr file_bytes=3000 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+PASS  SR10b final ACK lost, adaptive         protocol=sr window=8 rto=adaptive file_bytes=3000 packets_sent=5 retransmissions=1 timeouts=1 corrupted=0 time_ms=199.4 goodput_kbps=120.4 source_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+      RECV protocol=sr file_bytes=3000 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+PASS  SR11 size 0 B -> 1 pkts                protocol=sr window=4 rto=adaptive file_bytes=0 packets_sent=1 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.0 goodput_kbps=0.0 source_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      RECV protocol=sr file_bytes=0 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+PASS  SR11 size 1 B -> 2 pkts                protocol=sr window=4 rto=adaptive file_bytes=1 packets_sent=2 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=138.5 source_sha256=1f184f101c67d585ba00d24cfde36863f747fbab9e84af7760ec771e9b36ca51
+      RECV protocol=sr file_bytes=1 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=1f184f101c67d585ba00d24cfde36863f747fbab9e84af7760ec771e9b36ca51
+PASS  SR11 size 1024 B -> 2 pkts             protocol=sr window=4 rto=adaptive file_bytes=1024 packets_sent=2 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=138310.6 source_sha256=48a9840f84f1d48e94fef349d7eca8eb2fc9ee740cbb280455a61b6d766f526c
+      RECV protocol=sr file_bytes=1024 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=48a9840f84f1d48e94fef349d7eca8eb2fc9ee740cbb280455a61b6d766f526c
+PASS  SR11 size 2048 B -> 3 pkts             protocol=sr window=4 rto=adaptive file_bytes=2048 packets_sent=3 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=255732.3 source_sha256=b4ddfe6acfdfaad8d71a6b45643417594a4be6b13ed6cad4750e4da83c702ded
+      RECV protocol=sr file_bytes=2048 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=b4ddfe6acfdfaad8d71a6b45643417594a4be6b13ed6cad4750e4da83c702ded
+PASS  SR12 window 32 > 4 packets             protocol=sr window=32 rto=adaptive file_bytes=3000 packets_sent=4 retransmissions=0 timeouts=0 corrupted=0 time_ms=0.1 goodput_kbps=358257.1 source_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+      RECV protocol=sr file_bytes=3000 duplicates=0 corrupted=0 time_ms=0.0 received_sha256=73cf94452c1edecabd332d4dbe83e97ffe98047e09eaa2532dfc4263a40ece16
+PASS  SR13 receiver window < sender (4/8)    protocol=sr window=8 rto=adaptive file_bytes=1048576 packets_sent=1025 retransmissions=0 timeouts=0 corrupted=0 time_ms=7.0 goodput_kbps=1194362.2 source_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+      RECV protocol=sr file_bytes=1048576 duplicates=0 corrupted=0 time_ms=7.0 received_sha256=b36fb1a9ef376bfe3fef1fdf4b8739bb8a0455a13e9d0c79055257e9f64f2d27
+
+== Channel emulator end-to-end (200 KB, impairments on DATA and ACK paths) ==
+PASS  EMU saw  none                          protocol=saw window=1 rto=adaptive file_bytes=200000 packets_sent=197 retransmissions=0 timeouts=0 corrupted=0 time_ms=1.4 goodput_kbps=1155273.9 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=saw file_bytes=200000 duplicates=0 corrupted=0 time_ms=1.4 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU gbn8 none                          protocol=gbn window=8 rto=adaptive file_bytes=200000 packets_sent=197 retransmissions=0 timeouts=0 corrupted=0 time_ms=1.2 goodput_kbps=1386740.2 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=gbn file_bytes=200000 duplicates=0 corrupted=0 time_ms=1.5 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU sr8  none                          protocol=sr window=8 rto=adaptive file_bytes=200000 packets_sent=197 retransmissions=0 timeouts=0 corrupted=0 time_ms=1.2 goodput_kbps=1313508.1 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=sr file_bytes=200000 duplicates=0 corrupted=0 time_ms=1.6 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU saw  loss 5%                       protocol=saw window=1 rto=adaptive file_bytes=200000 packets_sent=222 retransmissions=25 timeouts=25 corrupted=0 time_ms=535.6 goodput_kbps=2987.5 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=saw file_bytes=200000 duplicates=12 corrupted=0 time_ms=536.1 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU gbn8 loss 5%                       protocol=gbn window=8 rto=adaptive file_bytes=200000 packets_sent=301 retransmissions=104 timeouts=13 corrupted=0 time_ms=238.2 goodput_kbps=6715.7 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=gbn file_bytes=200000 duplicates=0 corrupted=0 time_ms=238.7 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU sr8  loss 5%                       protocol=sr window=8 rto=adaptive file_bytes=200000 packets_sent=222 retransmissions=25 timeouts=25 corrupted=0 time_ms=309.2 goodput_kbps=5174.4 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=sr file_bytes=200000 duplicates=12 corrupted=0 time_ms=309.8 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU saw  loss 10%                      protocol=saw window=1 rto=adaptive file_bytes=200000 packets_sent=236 retransmissions=39 timeouts=39 corrupted=0 time_ms=950.8 goodput_kbps=1682.9 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=saw file_bytes=200000 duplicates=18 corrupted=0 time_ms=951.4 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU gbn8 loss 10%                      protocol=gbn window=8 rto=adaptive file_bytes=200000 packets_sent=341 retransmissions=144 timeouts=18 corrupted=0 time_ms=369.3 goodput_kbps=4332.5 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=gbn file_bytes=200000 duplicates=0 corrupted=0 time_ms=369.8 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU sr8  loss 10%                      protocol=sr window=8 rto=adaptive file_bytes=200000 packets_sent=236 retransmissions=39 timeouts=39 corrupted=0 time_ms=526.6 goodput_kbps=3038.1 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=sr file_bytes=200000 duplicates=18 corrupted=0 time_ms=527.2 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU saw  corrupt 5%                    protocol=saw window=1 rto=adaptive file_bytes=200000 packets_sent=225 retransmissions=28 timeouts=28 corrupted=14 time_ms=771.9 goodput_kbps=2072.9 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=saw file_bytes=200000 duplicates=14 corrupted=14 time_ms=771.8 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU gbn8 corrupt 5%                    protocol=gbn window=8 rto=adaptive file_bytes=200000 packets_sent=304 retransmissions=107 timeouts=14 corrupted=17 time_ms=256.7 goodput_kbps=6233.9 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=gbn file_bytes=200000 duplicates=0 corrupted=18 time_ms=257.2 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU sr8  corrupt 5%                    protocol=sr window=8 rto=adaptive file_bytes=200000 packets_sent=225 retransmissions=28 timeouts=28 corrupted=14 time_ms=450.1 goodput_kbps=3554.6 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=sr file_bytes=200000 duplicates=14 corrupted=14 time_ms=450.0 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU saw  reorder 10%                   protocol=saw window=1 rto=adaptive file_bytes=200000 packets_sent=200 retransmissions=3 timeouts=3 corrupted=0 time_ms=402.3 goodput_kbps=3977.6 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=saw file_bytes=200000 duplicates=3 corrupted=0 time_ms=402.2 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU gbn8 reorder 10%                   protocol=gbn window=8 rto=adaptive file_bytes=200000 packets_sent=359 retransmissions=162 timeouts=21 corrupted=0 time_ms=632.3 goodput_kbps=2530.6 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=gbn file_bytes=200000 duplicates=3 corrupted=0 time_ms=632.1 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU sr8  reorder 10%                   protocol=sr window=8 rto=adaptive file_bytes=200000 packets_sent=203 retransmissions=6 timeouts=6 corrupted=0 time_ms=164.0 goodput_kbps=9754.4 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=sr file_bytes=200000 duplicates=6 corrupted=0 time_ms=163.9 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU saw  dup 10%                       protocol=saw window=1 rto=adaptive file_bytes=200000 packets_sent=197 retransmissions=0 timeouts=0 corrupted=0 time_ms=5.7 goodput_kbps=278748.0 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=saw file_bytes=200000 duplicates=16 corrupted=0 time_ms=5.7 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU gbn8 dup 10%                       protocol=gbn window=8 rto=adaptive file_bytes=200000 packets_sent=197 retransmissions=0 timeouts=0 corrupted=0 time_ms=1.7 goodput_kbps=965961.3 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=gbn file_bytes=200000 duplicates=16 corrupted=0 time_ms=1.5 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU sr8  dup 10%                       protocol=sr window=8 rto=adaptive file_bytes=200000 packets_sent=197 retransmissions=0 timeouts=0 corrupted=0 time_ms=1.2 goodput_kbps=1351923.4 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=sr file_bytes=200000 duplicates=16 corrupted=0 time_ms=1.6 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU saw  delay 20+-5ms                 protocol=saw window=1 rto=adaptive file_bytes=200000 packets_sent=198 retransmissions=1 timeouts=1 corrupted=0 time_ms=7983.1 goodput_kbps=200.4 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=saw file_bytes=200000 duplicates=1 corrupted=0 time_ms=7942.9 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU gbn8 delay 20+-5ms                 protocol=gbn window=8 rto=adaptive file_bytes=200000 packets_sent=197 retransmissions=0 timeouts=0 corrupted=0 time_ms=1073.0 goodput_kbps=1491.1 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=gbn file_bytes=200000 duplicates=0 corrupted=0 time_ms=1033.5 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU sr8  delay 20+-5ms                 protocol=sr window=8 rto=adaptive file_bytes=200000 packets_sent=197 retransmissions=0 timeouts=0 corrupted=0 time_ms=1073.9 goodput_kbps=1489.9 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=sr file_bytes=200000 duplicates=0 corrupted=0 time_ms=1034.2 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU saw  combined                      protocol=saw window=1 rto=adaptive file_bytes=200000 packets_sent=240 retransmissions=43 timeouts=43 corrupted=6 time_ms=6256.2 goodput_kbps=255.7 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=saw file_bytes=200000 duplicates=28 corrupted=6 time_ms=6237.7 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU gbn8 combined                      protocol=gbn window=8 rto=adaptive file_bytes=200000 packets_sent=435 retransmissions=238 timeouts=31 corrupted=14 time_ms=2316.5 goodput_kbps=690.7 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=gbn file_bytes=200000 duplicates=9 corrupted=15 time_ms=2299.5 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  EMU sr8  combined                      protocol=sr window=8 rto=adaptive file_bytes=200000 packets_sent=235 retransmissions=38 timeouts=38 corrupted=6 time_ms=2173.2 goodput_kbps=736.3 source_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+      RECV protocol=sr file_bytes=200000 duplicates=22 corrupted=6 time_ms=2092.0 received_sha256=07faddc42b12c4841592f3f623ee9810a7b5daf17cf43823d121810ccdee2e2f
+PASS  T7 retry cap: both give up cleanly       server=1 client=1 in 11s
+
+passed: 93   failed: 0
+python3 tests/gbn_packet_tests.py
+== GBN sender (fake receiver <-> ./server) ==
+PASS  S1 initial burst = exactly [0, W)   [[0, 1, 2, 3]]
+PASS  S2 timeout retransmits exactly [base,next)   [[0, 1, 2, 3]]
+PASS  S3 first timeout fires at initial RTO (~200 ms)   [198 ms]
+PASS  S4 ACK 1 is cumulative: base->2, sends exactly [W, W+2)   [[4, 5]]
+PASS  S5 duplicate/old/future ACKs do not move the window
+PASS  S6 second timeout resends [2,6), never ACKed 0/1   [[2, 3, 4, 5]]
+PASS  S7 Karn: no sample from retransmitted packet (timer = 200 ms)   [199 ms]
+PASS  S8 adaptive RTO learned from valid samples (60 ms RTT -> RTO ~70-110)   [RTO 76 ms]
+PASS  S9 sender keeps retransmitting EOF and does not exit without its ACK   [EOF sent 3x, alive=True]
+PASS  S10 sender exits 0 with RESULT only after EOF ACK   [RESULT protocol=gbn window=4 rto=adaptive file_bytes=20000 p]
+PASS  S11 payloads seen by receiver reassemble to the file
+PASS  S12 next never exceeds base + W (all 39 packets checked)
+== GBN receiver (fake sender <-> ./client) ==
+PASS  R1 out-of-order before anything received: discarded, no ACK
+PASS  R2 in-order seq 0 -> ACK 0   [[0]]
+PASS  R3 out-of-order 2,3 discarded -> duplicate cumulative ACK 0,0   [[0, 0]]
+PASS  R4 missing seq 1 arrives -> ACK 1 (2,3 were NOT buffered)   [[1]]
+PASS  R5 seq 2 -> ACK 2   [[2]]
+PASS  R6 duplicate seq 1 -> re-ACK expected-1 = 2, not rewritten   [[2]]
+PASS  R7 corrupted seq 3 dropped silently, no ACK
+PASS  R8 seq 3 + EOF 4 -> ACK 3, ACK 4   [[3, 4]]
+PASS  R9 linger re-ACKs EOF retry after 1.5 s   [[4]]
+PASS  R10 linger was extended by the retry (still answers 3.5 s after EOF)   [[3]]
+PASS  R11 receiver exits 0 after ~2.5 s of quiet   [exit=0, quiet 2.4s]
+PASS  R12 each payload written exactly once, in order   [3172 bytes]
+
+packet-level: 24 passed, 0 failed
+python3 tests/sr_packet_tests.py
+== SR sender (fake receiver <-> ./server) ==
+PASS  S1 initial burst = exactly [0, W)   [[0, 1, 2, 3]]
+PASS  S2 ACKs 1-3 without 0: base stays 0, no new packets
+PASS  S3 timeout resends ONLY the unACKed packet 0 (not 1-3)   [[0]]
+PASS  S4 packet 0's own timer started at send with initial RTO (~200 ms)   [200 ms]
+PASS  S5 ACK 0 slides base over 0..3 -> sends exactly [4, 8)   [[4, 5, 6, 7]]
+PASS  S6 Karn + per-packet timers: 4..7 all expire together at learned RTO (~255)   [[4, 5, 6, 7] gaps [255, 255, 255, 255]]
+PASS  S7 base stops at first unACKed (5): sends only 8   [[8]]
+PASS  S8 duplicate / old / future ACKs change nothing
+PASS  S9 repeated timeout: only seq 5 resent, interval doubles   [4 resends of 5, ratio 1.98, others []]
+PASS  S10 EOF resent until ACKed; sender does not exit early   [EOF sent 2x]
+PASS  S11 sender exits 0 with RESULT after EOF ACK   [RESULT protocol=sr window=4 rto=adaptive file_byte]
+PASS  S12 payloads reassemble to the file
+PASS  S13 next never exceeds base + W (30 packets)
+PASS  S14 an ACKed packet is never retransmitted
+== SR receiver (fake sender <-> ./client) ==
+PASS  R1 out-of-order 1 (in window) is buffered and ACKed individually   [[1]]
+PASS  R2 out-of-order 3, 2 -> individual ACKs 3, 2   [[3, 2]]
+PASS  R3 missing 0 arrives -> ACK 0 (0..3 delivered)   [[0]]
+PASS  R4 duplicate below window (1) is re-ACKed   [[1]]
+PASS  R5 packet beyond window [4,8) is ignored, no ACK
+PASS  R6 corrupted 4 dropped, no ACK
+PASS  R7 in-window duplicate 5 is re-ACKed   [[5, 5]]
+PASS  R8 early EOF is ACKed + buffered; receiver does not finish yet   [[6], alive=True]
+PASS  R9 missing 4 -> ACK 4, then 4, 5, EOF delivered   [[4]]
+PASS  R10 final ACK lost: linger re-ACKs EOF retry   [[6]]
+PASS  R11 receiver exits 0 after ~2.5 s of quiet   [exit=0, quiet 2.4s]
+PASS  R12 file = 0..5 in order, each written once   [5420 B]
+PASS  R13 stats: duplicates=2 (R4, R7), corrupted=1 (R6)   [RECV protocol=sr file_bytes=5420 duplicates=2 corrupted=1 time_ms=843.6 received_sha256=0e07129c9eef7c9574b8645c90089791345047ae156ba3f1fbc5d0e19c83f13d]
+
+SR packet-level: 27 passed, 0 failed
+bash ./tests/hash_tests.sh
+== H1-H6: file sizes, all protocols, no impairment ==
+PASS H1   saw        0 B  NONE     src=e3b0c44298fc rcv=e3b0c44298fc match=1 exit=0/0 sent=1     retx=0    corrupt(emu/detected)=0/0
+PASS H2   saw        1 B  NONE     src=2017ff346139 rcv=2017ff346139 match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H3   saw      500 B  NONE     src=d05606dda42f rcv=d05606dda42f match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H4   saw     1024 B  NONE     src=145d01e50b0a rcv=145d01e50b0a match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H5   saw    20000 B  NONE     src=120ad009a5c5 rcv=120ad009a5c5 match=1 exit=0/0 sent=21    retx=0    corrupt(emu/detected)=0/0
+PASS H6   saw  8388608 B  NONE     src=e5ef1b4a8707 rcv=e5ef1b4a8707 match=1 exit=0/0 sent=8193  retx=0    corrupt(emu/detected)=0/0
+PASS H1   gbn        0 B  NONE     src=e3b0c44298fc rcv=e3b0c44298fc match=1 exit=0/0 sent=1     retx=0    corrupt(emu/detected)=0/0
+PASS H2   gbn        1 B  NONE     src=2017ff346139 rcv=2017ff346139 match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H3   gbn      500 B  NONE     src=d05606dda42f rcv=d05606dda42f match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H4   gbn     1024 B  NONE     src=145d01e50b0a rcv=145d01e50b0a match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H5   gbn    20000 B  NONE     src=120ad009a5c5 rcv=120ad009a5c5 match=1 exit=0/0 sent=21    retx=0    corrupt(emu/detected)=0/0
+PASS H6   gbn  8388608 B  NONE     src=e5ef1b4a8707 rcv=e5ef1b4a8707 match=1 exit=0/0 sent=8193  retx=0    corrupt(emu/detected)=0/0
+PASS H1   sr         0 B  NONE     src=e3b0c44298fc rcv=e3b0c44298fc match=1 exit=0/0 sent=1     retx=0    corrupt(emu/detected)=0/0
+PASS H2   sr         1 B  NONE     src=2017ff346139 rcv=2017ff346139 match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H3   sr       500 B  NONE     src=d05606dda42f rcv=d05606dda42f match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H4   sr      1024 B  NONE     src=145d01e50b0a rcv=145d01e50b0a match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H5   sr     20000 B  NONE     src=120ad009a5c5 rcv=120ad009a5c5 match=1 exit=0/0 sent=21    retx=0    corrupt(emu/detected)=0/0
+PASS H6   sr   8388608 B  NONE     src=e5ef1b4a8707 rcv=e5ef1b4a8707 match=1 exit=0/0 sent=8193  retx=0    corrupt(emu/detected)=0/0
+== H7-H9: 1 MB, no impairment ==
+PASS H7   saw  1048576 B  NONE     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1025  retx=0    corrupt(emu/detected)=0/0
+PASS H8   gbn  1048576 B  NONE     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1025  retx=0    corrupt(emu/detected)=0/0
+PASS H9   sr   1048576 B  NONE     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1025  retx=0    corrupt(emu/detected)=0/0
+== H10-H12: 1 MB, 10% loss on both paths ==
+PASS H10  saw  1048576 B  LOSS     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1251  retx=226  corrupt(emu/detected)=0/0
+PASS H11  gbn  1048576 B  LOSS     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1855  retx=830  corrupt(emu/detected)=0/0
+PASS H12  sr   1048576 B  LOSS     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1251  retx=226  corrupt(emu/detected)=0/0
+== H13: corruption through the real emulator (checksum -> retransmit -> hash) ==
+PASS H13  saw  1048576 B  CORR     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1315  retx=290  corrupt(emu/detected)=290/290
+PASS H13  gbn  1048576 B  CORR     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=2089  retx=1064 corrupt(emu/detected)=436/436
+PASS H13  sr   1048576 B  CORR     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1315  retx=290  corrupt(emu/detected)=290/290
+PASS H13c saw  1048576 B  COMB     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1321  retx=296  corrupt(emu/detected)=122/125
+PASS H13c gbn  1048576 B  COMB     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=2234  retx=1209 corrupt(emu/detected)=188/196
+PASS H13c sr   1048576 B  COMB     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1300  retx=275  corrupt(emu/detected)=120/122
+== H14: repeatability under combined impairments (3 runs each) ==
+PASS H14  saw   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=269   retx=72   corrupt(emu/detected)=33/35
+PASS H14  saw   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=269   retx=72   corrupt(emu/detected)=33/35
+PASS H14  saw   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=269   retx=72   corrupt(emu/detected)=33/35
+PASS H14  saw: all 3 transfers preserve identical source/output SHA-256; sent/retx=269/72, 269/72, 269/72
+PASS H14  gbn   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=493   retx=296  corrupt(emu/detected)=55/57
+PASS H14  gbn   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=493   retx=296  corrupt(emu/detected)=55/57
+PASS H14  gbn   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=493   retx=296  corrupt(emu/detected)=55/57
+PASS H14  gbn: all 3 transfers preserve identical source/output SHA-256; sent/retx=493/296, 493/296, 493/296
+PASS H14  sr    200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=262   retx=65   corrupt(emu/detected)=33/35
+PASS H14  sr    200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=262   retx=65   corrupt(emu/detected)=33/35
+PASS H14  sr    200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=262   retx=65   corrupt(emu/detected)=33/35
+PASS H14  sr: all 3 transfers preserve identical source/output SHA-256; sent/retx=262/65, 262/65, 262/65
+== N1-N2: wrong expected hash must be detected (transfer itself still correct) ==
+PASS N1   saw   200000 B  NONE     src=54a0c77e177d rcv=54a0c77e177d match=0 exit=0/2 sent=197   retx=0    corrupt(emu/detected)=0/0
+PASS N1   gbn   200000 B  NONE     src=54a0c77e177d rcv=54a0c77e177d match=0 exit=0/2 sent=197   retx=0    corrupt(emu/detected)=0/0
+PASS N1   sr    200000 B  NONE     src=54a0c77e177d rcv=54a0c77e177d match=0 exit=0/2 sent=197   retx=0    corrupt(emu/detected)=0/0
+PASS N2   sr    200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=0 exit=0/2 sent=262   retx=65   corrupt(emu/detected)=33/35
+== B1: without --expect-sha256 (backward compatible) ==
+PASS B1   received_sha256 reported, no hash_match field, exit 0
+== H15: byte-for-byte + completeness ==
+PASS H15  all 43 transfer rows ran, each required cmp(source, output) == identical
+
+hash tests passed: 48   failed: 0   (full hashes: tests/tmp/hash/hash_results.txt)

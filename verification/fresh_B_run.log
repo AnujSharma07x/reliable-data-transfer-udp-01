@@ -1,0 +1,15 @@
+B: 12 runs, input 1048576 B sha256 a67ed882dee03ab8..., CSV verification/fresh_B_raw.csv
+[  1/12] ok              gbn w=1  loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1076  retx=51    time_ms=23112.7  goodput_kbps=362.9    hash_match=1
+[  2/12] ok              gbn w=2  loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1091  retx=66    time_ms=11683.2  goodput_kbps=718.0    hash_match=1
+[  3/12] ok              gbn w=4  loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1149  retx=124   time_ms=6379.6   goodput_kbps=1314.9   hash_match=1
+[  4/12] ok              gbn w=8  loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1297  retx=272   time_ms=3938.4   goodput_kbps=2130.0   hash_match=1
+[  5/12] ok              gbn w=16 loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1554  retx=529   time_ms=2631.0   goodput_kbps=3188.4   hash_match=1
+[  6/12] ok              gbn w=32 loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1960  retx=935   time_ms=1842.4   goodput_kbps=4553.0   hash_match=1
+[  7/12] ok              sr  w=1  loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1072  retx=47    time_ms=22449.4  goodput_kbps=373.7    hash_match=1
+[  8/12] ok              sr  w=2  loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1079  retx=54    time_ms=12167.1  goodput_kbps=689.4    hash_match=1
+[  9/12] ok              sr  w=4  loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1072  retx=47    time_ms=6448.9   goodput_kbps=1300.8   hash_match=1
+[ 10/12] ok              sr  w=8  loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1081  retx=56    time_ms=3698.0   goodput_kbps=2268.4   hash_match=1
+[ 11/12] ok              sr  w=16 loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1072  retx=47    time_ms=2316.4   goodput_kbps=3621.4   hash_match=1
+[ 12/12] ok              sr  w=32 loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1072  retx=47    time_ms=1447.0   goodput_kbps=5797.3   hash_match=1
+
+rows written: 12/12   ok: 12   failed: 0

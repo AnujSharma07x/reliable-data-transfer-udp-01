@@ -1,0 +1,5 @@
+A: rows=15/15, invalid=0, status=PASS
+B: rows=12/12, invalid=0, status=PASS
+C: rows=12/12, invalid=0, status=PASS
+D: rows=21/21, invalid=0, status=PASS
+Total: 60/60; fresh experiment audit: PASS

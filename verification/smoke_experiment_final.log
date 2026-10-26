@@ -1,0 +1,8 @@
+smoke: 5 runs, input 1048576 B sha256 a67ed882dee03ab8..., CSV ../../../../tmp/rudp_smoke_final2.csv
+[  1/5] ok              saw w=1  loss=0.0  reorder=0.0  corrupt=0.0  rto=adaptive sent=1025  retx=0     time_ms=20837.7  goodput_kbps=402.6    hash_match=1
+[  2/5] ok              gbn w=8  loss=0.0  reorder=0.0  corrupt=0.0  rto=adaptive sent=1025  retx=0     time_ms=2629.3   goodput_kbps=3190.4   hash_match=1
+[  3/5] ok              sr  w=8  loss=0.0  reorder=0.0  corrupt=0.0  rto=adaptive sent=1025  retx=0     time_ms=2624.4   goodput_kbps=3196.4   hash_match=1
+[  4/5] ok              sr  w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=adaptive sent=1141  retx=116   time_ms=5268.4   goodput_kbps=1592.3   hash_match=1
+[  5/5] ok              gbn w=8  loss=0.0  reorder=0.1  corrupt=0.0  rto=adaptive sent=1756  retx=731   time_ms=9782.3   goodput_kbps=857.5    hash_match=1
+
+rows written: 5/5   ok: 5   failed: 0

@@ -1,0 +1,59 @@
+== H1-H6: file sizes, all protocols, no impairment ==
+PASS H1   saw        0 B  NONE     src=e3b0c44298fc rcv=e3b0c44298fc match=1 exit=0/0 sent=1     retx=0    corrupt(emu/detected)=0/0
+PASS H2   saw        1 B  NONE     src=2017ff346139 rcv=2017ff346139 match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H3   saw      500 B  NONE     src=d05606dda42f rcv=d05606dda42f match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H4   saw     1024 B  NONE     src=145d01e50b0a rcv=145d01e50b0a match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H5   saw    20000 B  NONE     src=120ad009a5c5 rcv=120ad009a5c5 match=1 exit=0/0 sent=21    retx=0    corrupt(emu/detected)=0/0
+PASS H6   saw  8388608 B  NONE     src=e5ef1b4a8707 rcv=e5ef1b4a8707 match=1 exit=0/0 sent=8193  retx=0    corrupt(emu/detected)=0/0
+PASS H1   gbn        0 B  NONE     src=e3b0c44298fc rcv=e3b0c44298fc match=1 exit=0/0 sent=1     retx=0    corrupt(emu/detected)=0/0
+PASS H2   gbn        1 B  NONE     src=2017ff346139 rcv=2017ff346139 match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H3   gbn      500 B  NONE     src=d05606dda42f rcv=d05606dda42f match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H4   gbn     1024 B  NONE     src=145d01e50b0a rcv=145d01e50b0a match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H5   gbn    20000 B  NONE     src=120ad009a5c5 rcv=120ad009a5c5 match=1 exit=0/0 sent=21    retx=0    corrupt(emu/detected)=0/0
+PASS H6   gbn  8388608 B  NONE     src=e5ef1b4a8707 rcv=e5ef1b4a8707 match=1 exit=0/0 sent=8193  retx=0    corrupt(emu/detected)=0/0
+PASS H1   sr         0 B  NONE     src=e3b0c44298fc rcv=e3b0c44298fc match=1 exit=0/0 sent=1     retx=0    corrupt(emu/detected)=0/0
+PASS H2   sr         1 B  NONE     src=2017ff346139 rcv=2017ff346139 match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H3   sr       500 B  NONE     src=d05606dda42f rcv=d05606dda42f match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H4   sr      1024 B  NONE     src=145d01e50b0a rcv=145d01e50b0a match=1 exit=0/0 sent=2     retx=0    corrupt(emu/detected)=0/0
+PASS H5   sr     20000 B  NONE     src=120ad009a5c5 rcv=120ad009a5c5 match=1 exit=0/0 sent=21    retx=0    corrupt(emu/detected)=0/0
+PASS H6   sr   8388608 B  NONE     src=e5ef1b4a8707 rcv=e5ef1b4a8707 match=1 exit=0/0 sent=8193  retx=0    corrupt(emu/detected)=0/0
+== H7-H9: 1 MB, no impairment ==
+PASS H7   saw  1048576 B  NONE     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1025  retx=0    corrupt(emu/detected)=0/0
+PASS H8   gbn  1048576 B  NONE     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1025  retx=0    corrupt(emu/detected)=0/0
+PASS H9   sr   1048576 B  NONE     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1025  retx=0    corrupt(emu/detected)=0/0
+== H10-H12: 1 MB, 10% loss on both paths ==
+PASS H10  saw  1048576 B  LOSS     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1251  retx=226  corrupt(emu/detected)=0/0
+PASS H11  gbn  1048576 B  LOSS     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1855  retx=830  corrupt(emu/detected)=0/0
+PASS H12  sr   1048576 B  LOSS     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1251  retx=226  corrupt(emu/detected)=0/0
+== H13: corruption through the real emulator (checksum -> retransmit -> hash) ==
+PASS H13  saw  1048576 B  CORR     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1315  retx=290  corrupt(emu/detected)=290/290
+PASS H13  gbn  1048576 B  CORR     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=2089  retx=1064 corrupt(emu/detected)=436/436
+PASS H13  sr   1048576 B  CORR     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1315  retx=290  corrupt(emu/detected)=290/290
+PASS H13c saw  1048576 B  COMB     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1327  retx=302  corrupt(emu/detected)=122/125
+PASS H13c gbn  1048576 B  COMB     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=2234  retx=1209 corrupt(emu/detected)=188/196
+PASS H13c sr   1048576 B  COMB     src=90483e6b124e rcv=90483e6b124e match=1 exit=0/0 sent=1300  retx=275  corrupt(emu/detected)=120/122
+== H14: repeatability under combined impairments (3 runs each) ==
+PASS H14  saw   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=270   retx=73   corrupt(emu/detected)=33/35
+PASS H14  saw   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=269   retx=72   corrupt(emu/detected)=33/35
+PASS H14  saw   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=269   retx=72   corrupt(emu/detected)=33/35
+PASS H14  saw: all 3 transfers preserve identical source/output SHA-256; sent/retx=270/73, 269/72, 269/72
+PASS H14  gbn   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=493   retx=296  corrupt(emu/detected)=55/57
+PASS H14  gbn   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=493   retx=296  corrupt(emu/detected)=55/57
+PASS H14  gbn   200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=493   retx=296  corrupt(emu/detected)=55/57
+PASS H14  gbn: all 3 transfers preserve identical source/output SHA-256; sent/retx=493/296, 493/296, 493/296
+PASS H14  sr    200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=262   retx=65   corrupt(emu/detected)=33/35
+PASS H14  sr    200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=262   retx=65   corrupt(emu/detected)=33/35
+PASS H14  sr    200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=1 exit=0/0 sent=262   retx=65   corrupt(emu/detected)=33/35
+PASS H14  sr: all 3 transfers preserve identical source/output SHA-256; sent/retx=262/65, 262/65, 262/65
+== N1-N2: wrong expected hash must be detected (transfer itself still correct) ==
+PASS N1   saw   200000 B  NONE     src=54a0c77e177d rcv=54a0c77e177d match=0 exit=0/2 sent=197   retx=0    corrupt(emu/detected)=0/0
+PASS N1   gbn   200000 B  NONE     src=54a0c77e177d rcv=54a0c77e177d match=0 exit=0/2 sent=197   retx=0    corrupt(emu/detected)=0/0
+PASS N1   sr    200000 B  NONE     src=54a0c77e177d rcv=54a0c77e177d match=0 exit=0/2 sent=197   retx=0    corrupt(emu/detected)=0/0
+PASS N2   sr    200000 B  COMB     src=54a0c77e177d rcv=54a0c77e177d match=0 exit=0/2 sent=262   retx=65   corrupt(emu/detected)=33/35
+== B1: without --expect-sha256 (backward compatible) ==
+PASS B1   received_sha256 reported, no hash_match field, exit 0
+== H15: byte-for-byte + completeness ==
+PASS H15  all 43 transfer rows ran, each required cmp(source, output) == identical
+
+hash tests passed: 48   failed: 0   (full hashes: tests/tmp/hash/hash_results.txt)
+EXIT:0
