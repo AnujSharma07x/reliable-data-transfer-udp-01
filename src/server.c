@@ -10,9 +10,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <limits.h>
 #include "arq.h"
 #include "options.h"
 #include "hash.h"
+
+static int parse_port(const char *text, int *port)
+{
+    char *end;
+    long value;
+    errno = 0;
+    value = strtol(text, &end, 10);
+    if (errno || end == text || *end != '\0' || value < 1 || value > 65535)
+        return -1;
+    *port = (int)value;
+    return 0;
+}
 
 int main(int argc, char **argv)
 {
@@ -22,12 +36,14 @@ int main(int argc, char **argv)
     packet_t p;
     char src_hash[SHA256_HEX_LEN + 1];
     char extra[32 + SHA256_HEX_LEN];
+    int port;
 
     if (argc < 3 || opts_parse(argc, argv, 3, &opt) != 0) {
         fprintf(stderr, "usage: %s <port> <file> [options]\n", argv[0]);
         opts_usage();
         return 1;
     }
+    if (parse_port(argv[1], &port) != 0) { fprintf(stderr, "invalid port: %s\n", argv[1]); return 1; }
     const arq_protocol_t *proto = arq_find(opt.proto);
     if (!proto) { fprintf(stderr, "unknown protocol %s\n", opt.proto); return 1; }
 
@@ -36,7 +52,10 @@ int main(int argc, char **argv)
     if (!in) { perror(argv[2]); return 1; }
 
     channel_init(&opt.chan);
-    if (net_server_open(&conn, atoi(argv[1])) != 0) return 1;
+    if (net_server_open(&conn, port) != 0) {
+        fclose(in);
+        return 1;
+    }
 
     fprintf(stderr, "server: waiting for client on port %s ...\n", argv[1]);
     while (!(net_recv_pkt(&conn, &p, -1) == NET_OK && p.type == PKT_HELLO))
