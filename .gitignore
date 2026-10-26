@@ -1,0 +1,10 @@
+src/*.o
+tests/*.o
+server
+client
+test_units
+tests/tmp/
+__pycache__/
+test_channel
+experiments/data/
+experiments/results/logs/
