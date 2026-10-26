@@ -1,12 +1,9 @@
 /*
  * arq.h - THE INTERFACE every ARQ protocol plugs into. Owner: Engineer 1.
  *
- * To add a protocol (Engineer 2: GBN, Engineer 3: SR):
- *   1. Implement   int xxx_send(arq_ctx_t *ctx, FILE *in);
- *                  int xxx_recv(arq_ctx_t *ctx, FILE *out);
- *      in your own file (gbn.c / sr.c - stubs already exist).
- *   2. That's it. They are already registered in arq.c, so
- *      ./server ... --proto gbn  /  ./client ... --proto gbn  just works.
+ * The current implementation registers Stop-and-Wait, Go-Back-N and
+ * Selective Repeat in arq.c. Each protocol implements the shared send/receive
+ * signatures in its own source file (saw.c, gbn.c, sr.c).
  *
  * Rules for every protocol:
  *   - send/receive ONLY with net_send_pkt() / net_recv_pkt()

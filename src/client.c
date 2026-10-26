@@ -17,9 +17,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <limits.h>
 #include "arq.h"
 #include "options.h"
 #include "hash.h"
+
+static int parse_port(const char *text, int *port)
+{
+    char *end;
+    long value;
+    errno = 0;
+    value = strtol(text, &end, 10);
+    if (errno || end == text || *end != '\0' || value < 1 || value > 65535)
+        return -1;
+    *port = (int)value;
+    return 0;
+}
 
 int main(int argc, char **argv)
 {
@@ -29,12 +43,14 @@ int main(int argc, char **argv)
     char got[SHA256_HEX_LEN + 1];
     char extra[64 + SHA256_HEX_LEN];
     int match = 1;
+    int port;
 
     if (argc < 4 || opts_parse(argc, argv, 4, &opt) != 0) {
         fprintf(stderr, "usage: %s <host> <port> <outfile> [options]\n", argv[0]);
         opts_usage();
         return 1;
     }
+    if (parse_port(argv[2], &port) != 0) { fprintf(stderr, "invalid port: %s\n", argv[2]); return 1; }
     const arq_protocol_t *proto = arq_find(opt.proto);
     if (!proto) { fprintf(stderr, "unknown protocol %s\n", opt.proto); return 1; }
 
@@ -42,7 +58,10 @@ int main(int argc, char **argv)
     if (!out) { perror(argv[3]); return 1; }
 
     channel_init(&opt.chan);
-    if (net_client_open(&conn, argv[1], atoi(argv[2])) != 0) return 1;
+    if (net_client_open(&conn, argv[1], port) != 0) {
+        fclose(out);
+        return 1;
+    }
 
     memset(&ctx, 0, sizeof(ctx));
     ctx.conn = &conn;
