@@ -1,0 +1,28 @@
+== GBN sender (fake receiver <-> ./server) ==
+PASS  S1 initial burst = exactly [0, W)   [[0, 1, 2, 3]]
+PASS  S2 timeout retransmits exactly [base,next)   [[0, 1, 2, 3]]
+PASS  S3 first timeout fires at initial RTO (~200 ms)   [198 ms]
+PASS  S4 ACK 1 is cumulative: base->2, sends exactly [W, W+2)   [[4, 5]]
+PASS  S5 duplicate/old/future ACKs do not move the window
+PASS  S6 second timeout resends [2,6), never ACKed 0/1   [[2, 3, 4, 5]]
+PASS  S7 Karn: no sample from retransmitted packet (timer = 200 ms)   [200 ms]
+PASS  S8 adaptive RTO learned from valid samples (60 ms RTT -> RTO ~70-110)   [RTO 80 ms]
+PASS  S9 sender keeps retransmitting EOF and does not exit without its ACK   [EOF sent 3x, alive=True]
+PASS  S10 sender exits 0 with RESULT only after EOF ACK   [RESULT protocol=gbn window=4 rto=adaptive file_bytes=20000 p]
+PASS  S11 payloads seen by receiver reassemble to the file
+PASS  S12 next never exceeds base + W (all 39 packets checked)
+== GBN receiver (fake sender <-> ./client) ==
+PASS  R1 out-of-order before anything received: discarded, no ACK
+PASS  R2 in-order seq 0 -> ACK 0   [[0]]
+PASS  R3 out-of-order 2,3 discarded -> duplicate cumulative ACK 0,0   [[0, 0]]
+PASS  R4 missing seq 1 arrives -> ACK 1 (2,3 were NOT buffered)   [[1]]
+PASS  R5 seq 2 -> ACK 2   [[2]]
+PASS  R6 duplicate seq 1 -> re-ACK expected-1 = 2, not rewritten   [[2]]
+PASS  R7 corrupted seq 3 dropped silently, no ACK
+PASS  R8 seq 3 + EOF 4 -> ACK 3, ACK 4   [[3, 4]]
+PASS  R9 linger re-ACKs EOF retry after 1.5 s   [[4]]
+PASS  R10 linger was extended by the retry (still answers 3.5 s after EOF)   [[3]]
+PASS  R11 receiver exits 0 after ~2.5 s of quiet   [exit=0, quiet 2.4s]
+PASS  R12 each payload written exactly once, in order   [3172 bytes]
+
+packet-level: 24 passed, 0 failed

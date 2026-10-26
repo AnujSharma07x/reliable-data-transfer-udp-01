@@ -1,0 +1,20 @@
+invalid --window: abc
+usage: ./server <port> <file> [options]
+options:
+  --proto saw|gbn|sr     ARQ protocol (default saw)
+  --window N             window size for gbn/sr (default 1)
+  --rto adaptive|MS      adaptive RTO or fixed RTO in ms (sender)
+  --expect-sha256 HEX    receiver: compare the received file's SHA-256
+                         with HEX (exit code 2 if it differs)
+  channel emulator (applies to packets THIS side sends):
+  --loss P               drop probability, 0..1 or e.g. 10%
+  --dup P                duplication probability
+  --reorder P            reordering probability (held back 5-25 ms)
+  --corrupt P            corruption probability (one bit flipped)
+  --delay MS             one-way delay (non-blocking)
+  --jitter MS            delay varies uniformly by +/- MS
+  --seed N               random seed (default 1)
+  deterministic test hooks:
+  --drop-every N         drop every Nth packet
+  --corrupt-every N      corrupt every Nth packet
+  --delay-ms N           same as --delay

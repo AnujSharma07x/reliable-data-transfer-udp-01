@@ -1,0 +1,58 @@
+invalid port: abc
+server_port=abc exit=1
+invalid port: 12abc
+server_port=12abc exit=1
+invalid port: 65536
+server_port=65536 exit=1
+invalid port: 0
+server_port=0 exit=1
+invalid port: abc
+client_port=abc exit=1
+invalid port: 12abc
+client_port=12abc exit=1
+invalid port: 65536
+client_port=65536 exit=1
+invalid port: 0
+client_port=0 exit=1
+invalid --window: abc
+usage: ./server <port> <file> [options]
+options:
+  --proto saw|gbn|sr     ARQ protocol (default saw)
+  --window N             window size for gbn/sr (default 1)
+  --rto adaptive|MS      adaptive RTO or fixed RTO in ms (sender)
+  --expect-sha256 HEX    receiver: compare the received file's SHA-256
+                         with HEX (exit code 2 if it differs)
+  channel emulator (applies to packets THIS side sends):
+  --loss P               drop probability, 0..1 or e.g. 10%
+  --dup P                duplication probability
+  --reorder P            reordering probability (held back 5-25 ms)
+  --corrupt P            corruption probability (one bit flipped)
+  --delay MS             one-way delay (non-blocking)
+  --jitter MS            delay varies uniformly by +/- MS
+  --seed N               random seed (default 1)
+  deterministic test hooks:
+  --drop-every N         drop every Nth packet
+  --corrupt-every N      corrupt every Nth packet
+  --delay-ms N           same as --delay
+window_abc_exit=1
+--loss must be between 0 and 1 (or 0%..100%)
+usage: ./server <port> <file> [options]
+options:
+  --proto saw|gbn|sr     ARQ protocol (default saw)
+  --window N             window size for gbn/sr (default 1)
+  --rto adaptive|MS      adaptive RTO or fixed RTO in ms (sender)
+  --expect-sha256 HEX    receiver: compare the received file's SHA-256
+                         with HEX (exit code 2 if it differs)
+  channel emulator (applies to packets THIS side sends):
+  --loss P               drop probability, 0..1 or e.g. 10%
+  --dup P                duplication probability
+  --reorder P            reordering probability (held back 5-25 ms)
+  --corrupt P            corruption probability (one bit flipped)
+  --delay MS             one-way delay (non-blocking)
+  --jitter MS            delay varies uniformly by +/- MS
+  --seed N               random seed (default 1)
+  deterministic test hooks:
+  --drop-every N         drop every Nth packet
+  --corrupt-every N      corrupt every Nth packet
+  --delay-ms N           same as --delay
+loss_10abc_exit=1

@@ -1,0 +1,24 @@
+D: 21 runs, input 1048576 B sha256 a67ed882dee03ab8..., CSV verification/fresh_D_raw.csv
+[  1/21] ok              saw w=1  loss=0.05 reorder=0.0  corrupt=0.0  rto=adaptive sent=1143  retx=118   time_ms=24607.3  goodput_kbps=340.9    hash_match=1
+[  2/21] ok              saw w=1  loss=0.05 reorder=0.0  corrupt=0.0  rto=20       sent=2183  retx=1158  time_ms=24774.2  goodput_kbps=338.6    hash_match=1
+[  3/21] ok              saw w=1  loss=0.05 reorder=0.0  corrupt=0.0  rto=40       sent=1141  retx=116   time_ms=25297.0  goodput_kbps=331.6    hash_match=1
+[  4/21] ok              saw w=1  loss=0.05 reorder=0.0  corrupt=0.0  rto=80       sent=1141  retx=116   time_ms=30023.4  goodput_kbps=279.4    hash_match=1
+[  5/21] ok              saw w=1  loss=0.05 reorder=0.0  corrupt=0.0  rto=160      sent=1141  retx=116   time_ms=39585.0  goodput_kbps=211.9    hash_match=1
+[  6/21] ok              saw w=1  loss=0.05 reorder=0.0  corrupt=0.0  rto=320      sent=1141  retx=116   time_ms=57937.4  goodput_kbps=144.8    hash_match=1
+[  7/21] ok              saw w=1  loss=0.05 reorder=0.0  corrupt=0.0  rto=640      sent=1141  retx=116   time_ms=97184.3  goodput_kbps=86.3     hash_match=1
+[  8/21] ok              gbn w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=adaptive sent=1609  retx=584   time_ms=5760.3   goodput_kbps=1456.3   hash_match=1
+[  9/21] ok              gbn w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=20       sent=2367  retx=1342  time_ms=3565.5   goodput_kbps=2352.7   hash_match=1
+[ 10/21] ok              gbn w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=40       sent=1609  retx=584   time_ms=6125.4   goodput_kbps=1369.5   hash_match=1
+[ 11/21] ok              gbn w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=80       sent=1609  retx=584   time_ms=9087.7   goodput_kbps=923.1    hash_match=1
+[ 12/21] ok              gbn w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=160      sent=1609  retx=584   time_ms=14892.3  goodput_kbps=563.3    hash_match=1
+[ 13/21] ok              gbn w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=320      sent=1609  retx=584   time_ms=26591.8  goodput_kbps=315.5    hash_match=1
+[ 14/21] ok              gbn w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=640      sent=1609  retx=584   time_ms=50003.9  goodput_kbps=167.8    hash_match=1
+[ 15/21] ok              sr  w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=adaptive sent=1155  retx=130   time_ms=5387.0   goodput_kbps=1557.2   hash_match=1
+[ 16/21] ok              sr  w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=20       sent=2172  retx=1147  time_ms=3648.7   goodput_kbps=2299.1   hash_match=1
+[ 17/21] ok              sr  w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=40       sent=1141  retx=116   time_ms=5310.2   goodput_kbps=1579.7   hash_match=1
+[ 18/21] ok              sr  w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=80       sent=1141  retx=116   time_ms=8546.2   goodput_kbps=981.6    hash_match=1
+[ 19/21] ok              sr  w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=160      sent=1141  retx=116   time_ms=14987.0  goodput_kbps=559.7    hash_match=1
+[ 20/21] ok              sr  w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=320      sent=1141  retx=116   time_ms=27602.2  goodput_kbps=303.9    hash_match=1
+[ 21/21] ok              sr  w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=640      sent=1141  retx=116   time_ms=53268.1  goodput_kbps=157.5    hash_match=1
+
+rows written: 21/21   ok: 21   failed: 0

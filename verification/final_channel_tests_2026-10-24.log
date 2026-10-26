@@ -1,0 +1,45 @@
+CHANNEL sent=4097 dropped=0 corrupted=0 duplicated=0 reordered=0 queue_full=1 send_errors=0 init_errors=0
+[1] no impairment baseline
+  PASS  all 1000 arrive once, checksum ok (got 1000)
+  PASS  in order, payload intact (inversions 0)
+[2] loss = 0% (through the delay queue, 5 ms)
+  PASS  all 1000 arrive, 0 dropped (got 1000)
+[3] loss = 100%
+  PASS  nothing arrives, dropped=1000
+[3b] loss = 10%
+  PASS  received 875 = 1000 - dropped 125 (expect ~100)
+[4] duplication 20%
+  PASS  received 1205 = 1000 + duplicated 205 (expect ~200)
+  PASS  real duplicates: max 2 copies, none missing, payload intact
+[5] reordering 20% (delay 5 ms, packets 1 ms apart)
+  PASS  out-of-order arrivals: 194 inversions, all 1000 arrive once
+  PASS  reordered=194 (expect ~200)
+  PASS  control: fixed delay, no reorder -> FIFO kept (0 inversions)
+[6] corruption 10%
+  PASS  checksum failures 113 == corrupted 113 (expect ~100)
+  PASS  every packet passing the checksum has an intact payload
+  PASS  corruption only touches a copy, never the caller's buffer
+[7] fixed delay 30 ms (200 packets sent back-to-back)
+  PASS  all packets arrive no earlier than fixed delay (latency 30.7 .. 30.8 ms)
+  PASS  non-blocking: 200 sends took 0.2 ms (not 200 x 30 ms)
+[8] delay 30 ms + jitter 10 ms (packets 5 ms apart)
+  PASS  all packets arrive no earlier than minimum delay (latency 23.0 .. 43.7 ms)
+  PASS  jitter varies arrival times: mean 34.3 ms, std dev 4.8 ms
+  PASS  jitter alone never reorders: FIFO kept (0 inversions)
+  PASS  FIFO kept even for a back-to-back burst (0 inversions)
+[9] deterministic seed
+  PASS  seed 7 twice -> identical decisions + per-packet fate (300 arrivals; dropped 29 dup 29 corrupt 28 reorder 30)
+  PASS  same seed preserves packet fate; observed 8 arrival-order differences
+  PASS  seed 8 -> different decisions (dropped 27 dup 32 corrupt 19 reorder 34)
+[10] combined: loss 5% dup 5% reorder 10% corrupt 5% delay 20 jitter 5
+  PASS  arrivals 1002 = 1000 - dropped 44 + duplicated 46
+  PASS  checksum failures 41 (corrupted 39), 87 inversions, intact payloads
+[11] immediate UDP send error reporting
+  PASS  invalid socket returns error (rc=-1 send_errors=1)
+[12] asynchronous UDP send-error counting
+  PASS  queued packet accepted before asynchronous delivery
+  PASS  delivery thread counts failed sendto (send_errors=2)
+[13] queue-capacity error reporting
+  PASS  queue capacity returns error (rc=-1 queue_full=1)
+
+all channel tests passed

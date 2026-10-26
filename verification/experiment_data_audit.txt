@@ -1,0 +1,8 @@
+Input: 1048576 bytes; SHA-256=a67ed882dee03ab8f125542b9eedad7b469f2daa76e0d16765bd8239af6d156e
+A: rows=45/45; invalid CSV rows=0; logs verified=0/45; CSV status=PASS
+B: rows=36/36; invalid CSV rows=0; logs verified=0/36; CSV status=PASS
+C: rows=36/36; invalid CSV rows=0; logs verified=0/36; CSV status=PASS
+D: rows=63/63; invalid CSV rows=0; logs verified=0/63; CSV status=PASS
+Total rows: 180/180
+CSV DATA AUDIT: PASS
+PER-RUN LOG AUDIT: NOT AVAILABLE (per-run logs are not packaged)

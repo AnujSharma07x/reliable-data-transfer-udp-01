@@ -1,0 +1,12 @@
+batch:        D
+started:      2026-10-24T09:58:23
+git commit:   not available (release archive has no .git history)
+machine:      Linux-6.18.55-x86_64-with-glibc2.41 | INTEL(R) XEON(R) PLATINUM 8573C | 3 CPUs
+compiler:     gcc (Debian 14.2.0-19) 14.2.0
+input file:   experiments/data/input_1048576.bin (1048576 bytes)
+input sha256: a67ed882dee03ab8f125542b9eedad7b469f2daa76e0d16765bd8239af6d156e
+repetitions:  1 (rep k uses seed + k)
+configs:      21 -> 21 runs
+emulator flags are applied to each sender's outgoing path (DATA on server, ACK on client);
+loss/reorder/corruption are per-direction probabilities.
+directional seeds: DATA=base seed; ACK=base seed + 1000003.

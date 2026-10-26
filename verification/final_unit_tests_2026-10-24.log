@@ -1,0 +1,31 @@
+[packet]
+  PASS  encoded size = header + payload
+  PASS  valid packet decodes
+  PASS  fields survive round trip
+  PASS  1-bit payload error detected
+  PASS  corrupted seq number detected
+  PASS  truncated packet rejected
+  PASS  empty ACK packet round trip
+  PASS  unknown packet type rejected
+  PASS  ACK with payload rejected by encoder
+  PASS  oversized payload rejected by encoder
+  PASS  nonzero reserved byte rejected
+[rto]
+  PASS  initial RTO before any sample
+  PASS  first sample: SRTT=RTT, RTTVAR=RTT/2, RTO=300
+  PASS  second sample follows Jacobson/Karels
+  PASS  stable RTT -> RTO converges to RTT + G (RFC 6298 margin)
+  PASS  timeout doubles RTO (backoff)
+  PASS  backoff is capped at RTO_MAX
+  PASS  two timeouts -> 4x RTO
+  PASS  ACK of new data clears backoff (no Karn sample needed)
+  PASS  tiny RTT clamps to RTO_MIN
+  PASS  fixed RTO ignores samples and timeouts
+[hash]
+  PASS  SHA-256(empty file) = NIST vector
+  PASS  SHA-256("abc") = NIST vector
+  PASS  SHA-256(448-bit message) = NIST vector
+  PASS  SHA-256(one million 'a') = NIST vector (multi-chunk read)
+  PASS  missing file returns -1
+
+all unit tests passed

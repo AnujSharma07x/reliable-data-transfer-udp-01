@@ -1,0 +1,31 @@
+== SR sender (fake receiver <-> ./server) ==
+PASS  S1 initial burst = exactly [0, W)   [[0, 1, 2, 3]]
+PASS  S2 ACKs 1-3 without 0: base stays 0, no new packets
+PASS  S3 timeout resends ONLY the unACKed packet 0 (not 1-3)   [[0]]
+PASS  S4 packet 0's own timer started at send with initial RTO (~200 ms)   [200 ms]
+PASS  S5 ACK 0 slides base over 0..3 -> sends exactly [4, 8)   [[4, 5, 6, 7]]
+PASS  S6 Karn + per-packet timers: 4..7 all expire together at learned RTO (~255)   [[4, 5, 6, 7] gaps [256, 256, 256, 256]]
+PASS  S7 base stops at first unACKed (5): sends only 8   [[8]]
+PASS  S8 duplicate / old / future ACKs change nothing
+PASS  S9 repeated timeout: only seq 5 resent, interval doubles   [4 resends of 5, ratio 2.00, others []]
+PASS  S10 EOF resent until ACKed; sender does not exit early   [EOF sent 2x]
+PASS  S11 sender exits 0 with RESULT after EOF ACK   [RESULT protocol=sr window=4 rto=adaptive file_byte]
+PASS  S12 payloads reassemble to the file
+PASS  S13 next never exceeds base + W (30 packets)
+PASS  S14 an ACKed packet is never retransmitted
+== SR receiver (fake sender <-> ./client) ==
+PASS  R1 out-of-order 1 (in window) is buffered and ACKed individually   [[1]]
+PASS  R2 out-of-order 3, 2 -> individual ACKs 3, 2   [[3, 2]]
+PASS  R3 missing 0 arrives -> ACK 0 (0..3 delivered)   [[0]]
+PASS  R4 duplicate below window (1) is re-ACKed   [[1]]
+PASS  R5 packet beyond window [4,8) is ignored, no ACK
+PASS  R6 corrupted 4 dropped, no ACK
+PASS  R7 in-window duplicate 5 is re-ACKed   [[5, 5]]
+PASS  R8 early EOF is ACKed + buffered; receiver does not finish yet   [[6], alive=True]
+PASS  R9 missing 4 -> ACK 4, then 4, 5, EOF delivered   [[4]]
+PASS  R10 final ACK lost: linger re-ACKs EOF retry   [[6]]
+PASS  R11 receiver exits 0 after ~2.5 s of quiet   [exit=0, quiet 2.4s]
+PASS  R12 file = 0..5 in order, each written once   [5420 B]
+PASS  R13 stats: duplicates=2 (R4, R7), corrupted=1 (R6)   [RECV protocol=sr file_bytes=5420 duplicates=2 corrupted=1 time_ms=846.9 received_sha256=0e07129c9eef7c9574b8645c90089791345047ae156ba3f1fbc5d0e19c83f13d]
+
+SR packet-level: 27 passed, 0 failed

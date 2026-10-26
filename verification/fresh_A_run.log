@@ -1,0 +1,18 @@
+A: 15 runs, input 1048576 B sha256 a67ed882dee03ab8..., CSV verification/fresh_A_raw.csv
+[  1/15] ok              saw w=1  loss=0.0  reorder=0.0  corrupt=0.0  rto=adaptive sent=1028  retx=3     time_ms=21394.7  goodput_kbps=392.1    hash_match=1
+[  2/15] ok              saw w=1  loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1076  retx=51    time_ms=22615.2  goodput_kbps=370.9    hash_match=1
+[  3/15] ok              saw w=1  loss=0.05 reorder=0.0  corrupt=0.0  rto=adaptive sent=1141  retx=116   time_ms=24901.5  goodput_kbps=336.9    hash_match=1
+[  4/15] ok              saw w=1  loss=0.1  reorder=0.0  corrupt=0.0  rto=adaptive sent=1249  retx=224   time_ms=29053.7  goodput_kbps=288.7    hash_match=1
+[  5/15] ok              saw w=1  loss=0.15 reorder=0.0  corrupt=0.0  rto=adaptive sent=1409  retx=384   time_ms=44114.6  goodput_kbps=190.2    hash_match=1
+[  6/15] ok              gbn w=8  loss=0.0  reorder=0.0  corrupt=0.0  rto=adaptive sent=1025  retx=0     time_ms=2629.5   goodput_kbps=3190.2   hash_match=1
+[  7/15] ok              gbn w=8  loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1297  retx=272   time_ms=3948.5   goodput_kbps=2124.5   hash_match=1
+[  8/15] ok              gbn w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=adaptive sent=1609  retx=584   time_ms=5737.0   goodput_kbps=1462.2   hash_match=1
+[  9/15] ok              gbn w=8  loss=0.1  reorder=0.0  corrupt=0.0  rto=adaptive sent=2120  retx=1095  time_ms=8525.5   goodput_kbps=983.9    hash_match=1
+[ 10/15] ok              gbn w=8  loss=0.15 reorder=0.0  corrupt=0.0  rto=adaptive sent=2683  retx=1658  time_ms=12276.1  goodput_kbps=683.3    hash_match=1
+[ 11/15] ok              sr  w=8  loss=0.0  reorder=0.0  corrupt=0.0  rto=adaptive sent=1025  retx=0     time_ms=2660.4   goodput_kbps=3153.2   hash_match=1
+[ 12/15] ok              sr  w=8  loss=0.02 reorder=0.0  corrupt=0.0  rto=adaptive sent=1072  retx=47    time_ms=3683.5   goodput_kbps=2277.3   hash_match=1
+[ 13/15] ok              sr  w=8  loss=0.05 reorder=0.0  corrupt=0.0  rto=adaptive sent=1141  retx=116   time_ms=5243.2   goodput_kbps=1599.9   hash_match=1
+[ 14/15] ok              sr  w=8  loss=0.1  reorder=0.0  corrupt=0.0  rto=adaptive sent=1249  retx=224   time_ms=6815.5   goodput_kbps=1230.8   hash_match=1
+[ 15/15] ok              sr  w=8  loss=0.15 reorder=0.0  corrupt=0.0  rto=adaptive sent=1396  retx=371   time_ms=10437.8  goodput_kbps=803.7    hash_match=1
+
+rows written: 15/15   ok: 15   failed: 0

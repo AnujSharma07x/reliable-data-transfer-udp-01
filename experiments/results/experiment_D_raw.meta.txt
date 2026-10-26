@@ -1,0 +1,13 @@
+batch:        D
+started:      2026-10-14T18:15:07
+git commit:   d4595f2 (uncommitted changes)
+machine:      Linux-6.18.44-x86_64-with-glibc2.41 | AMD EPYC 9V74 80-Core Processor | 3 CPUs
+compiler:     gcc (Debian 14.2.0-19) 14.2.0
+input file:   experiments/data/input_1048576.bin (1048576 bytes)
+input sha256: a67ed882dee03ab8f125542b9eedad7b469f2daa76e0d16765bd8239af6d156e
+repetitions:  3 (rep k uses seed + k)
+configs:      21 -> 63 runs
+emulator impairment probabilities are applied to both DATA and ACK paths.
+directional seeds: DATA=base seed; ACK=base seed + 1000003.
+loss/reorder/corruption are per-direction probabilities.
+package provenance: data were generated from the audit working copy based on the recorded commit above, with uncommitted experiment/test/documentation changes. The final handoff archive intentionally excludes that embedded .git history; establish new Git provenance in the empty team repository.
