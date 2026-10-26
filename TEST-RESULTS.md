@@ -2,7 +2,19 @@
 
 Environment: Linux x86-64, GCC 14.2.0, Python 3.13.5.
 
-## Latest source revision (2026-10-24)
+## Integration Release Verification (2026-10-27)
+
+Conducted on Ubuntu 24.04 (WSL 2, Linux x86-64, GCC 13.2.0, Python 3.12.3, OpenSSL 3.0.13):
+- `make clean && make -j2`: **PASS** (exit code 0, 0 compiler warnings/errors under `-Wall -Wextra`).
+- `./test_units`: **PASS** (22/22 unit tests, exit code 0).
+- `./test_channel`: **PASS** (13 test suites including UDP error paths and queue overflow, exit code 0).
+- `python3 tests/gbn_packet_tests.py`: **PASS** (24/24 wire-format tests, exit code 0).
+- `python3 tests/sr_packet_tests.py`: **PASS** (27/27 wire-format tests, exit code 0).
+- `bash tests/hash_tests.sh`: **PASS** (48/48 SHA-256 integrity and repeat tests, exit code 0).
+- `bash tests/run_tests.sh`: **PASS** (93/93 end-to-end integration tests, exit code 0).
+- `make test`: **PASS** (exit code 0, executing full integration test suite).
+
+## Previous revision verification (2026-10-24)
 
 - `make clean && make -j2`: **PASS**, clean build with `-Wall -Wextra` and no compiler warnings visible.
 - `./test_units`: **PASS** after packet validation, RTO and SHA-256 checks.
