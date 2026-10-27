@@ -34,3 +34,11 @@ Conducted on Ubuntu 24.04 (WSL 2, Linux x86-64, GCC 13.2.0, Python 3.12.3, OpenS
 - Asynchronous UDP send failures occur after `channel_send()` has returned; these are counted in `CHANNEL ... send_errors=...`, but cannot be synchronously returned to the original protocol call.
 - Rare operating-system resource failures cannot be exhaustively verified with ordinary success-path tests.
 - The report's experiment measurements are localhost emulator results and are from the earlier audit working copy. The team should not describe them as fresh measurements from this exact source revision.
+
+## Integration Review Sign-Off
+
+- **Reviewer:** Bhuvika Naulani
+- **Review date:** 2026-10-27
+- **Scope:** `src/net.c`, `tests/hash_tests.sh`, `README.md`, `TEST-RESULTS.md`, and `AI-USE.md`.
+- **Evidence reviewed:** Integration diffs and the available recorded test results.
+- **Status:** Review completed to the extent described above. Test results are reported according to the available evidence; independent execution is claimed only where it actually occurred.
