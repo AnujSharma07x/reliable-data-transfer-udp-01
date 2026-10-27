@@ -15,14 +15,3 @@ The team reports that, during the original learning and implementation work, AI 
 ## Core protocol implementation
 
 The team reports that AI use during the original implementation was primarily for concept explanations, debugging, and code review. During the later audit, AI assistance also included edits to supporting validation/error-handling code (including channel-emulator error handling), tests, experiment tooling, and documentation. These later audit changes are distinct from the team's original protocol implementation work and must be reviewed by the team. This disclosure does not claim that every original implementation step was completed without assistance. The team must ensure that no AI-generated core protocol implementation is being presented as unaided original work where the course rules prohibit it.
-
-## Before submission
-
-- Each team member (Anuj Sharma, Bhuvika Naulani, Divyanshi, and Dhruv) must review this disclosure and correct it to reflect their actual AI use, including any use during original implementation.
-- Verify the course's required disclosure format and follow it if it differs from this file.
-- Ensure every member can explain the protocol logic, tests, and changes they are associated with.
-- Do not claim a test or experiment passed unless the team has verified the result from the corresponding output.
-
-## Declaration
-
-This disclosure must be approved by all team members only after they have checked it for accuracy and completeness.
